@@ -180,14 +180,16 @@ int main(int argc, char *argv[])
 	gzFile fp;
 	kseq_t *ks;
 	int W = 64, T = 20, c;
+    double P = 0.5;
 	ketopt_t o = KETOPT_INIT;
 
-	while ((c = ketopt(&o, argc, argv, 1, "w:t:", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "w:t:p:", 0)) >= 0) {
 		if (c == 'w') W = atoi(o.arg);
 		else if (c == 't') T = atoi(o.arg);
+        else if (c == 'p') P = atof(o.arg);
 	}
 	if (o.ind == argc) {
-		fprintf(stderr, "Usage: sdust [-w %d] [-t %d] <in.fa>\n", W, T);
+		fprintf(stderr, "Usage: sdust [-w %d] [-t %d] [-p %g] <in.fa>\n", W, T, P);
 		return 1;
 	}
 	fp = strcmp(argv[o.ind], "-")? gzopen(argv[o.ind], "r") : gzdopen(fileno(stdin), "r");
@@ -195,9 +197,18 @@ int main(int argc, char *argv[])
 	while (kseq_read(ks) >= 0) {
 		uint64_t *r;
 		int i, n;
+        int s;
 		r = sdust(0, (uint8_t*)ks->seq.s, -1, T, W, &n);
+        s = 0;
 		for (i = 0; i < n; ++i)
-			printf("%s\t%d\t%d\n", ks->name.s, (int)(r[i]>>32), (int)r[i]);
+            s += (int)r[i] - (int)(r[i]>>32) + 1;
+        if (s < ks->seq.l * P) {
+            printf(">%s", ks->name.s);
+            if (ks->comment.l)
+                printf(" %s", ks->comment.s);
+            printf("\n");
+            printf("%s\n", ks->seq.s);
+        }
 		free(r);
 	}
 	kseq_destroy(ks);

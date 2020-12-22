@@ -28,6 +28,9 @@ clean:
 depend:
 		(LC_ALL=C; export LC_ALL; makedepend -Y -- $(CFLAGS) $(DFLAGS) -- *.c)
 
+install:
+		cp $(PROG) ~/my-apps/sdust/filter
+
 # DO NOT DELETE
 
 sdust.o: kdq.h kalloc.h kvec.h sdust.h ketopt.h kseq.h
